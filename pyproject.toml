@@ -1,0 +1,27 @@
+[project]
+name = "mini-harness"
+version = "0.1.0"
+description = "Учебный CLI-харнес для агента: свой loop, tools, MCP, skills, субагенты"
+requires-python = ">=3.10"
+dependencies = [
+    "mcp>=1.2",
+    "tomli>=2.0; python_version < '3.11'",
+]
+
+[project.optional-dependencies]
+anthropic = ["anthropic>=0.40"]
+openai = ["openai>=1.40"]  
+# Вариант на фреймворке (deepagents_app.py). Требует Python >= 3.11.
+deepagents = [
+    "deepagents>=0.7",
+    "langchain>=0.3",
+    "langchain-openai>=0.2",
+    "langchain-mcp-adapters>=0.1",
+]
+
+[project.scripts]
+harness = "cli:run"
+
+[tool.setuptools]
+py-modules = ["cli"]
+packages = ["harness"]

@@ -1,0 +1,56 @@
+# Конфигурация харнеса. Читается через tomllib (Python 3.11+) или tomli.
+
+# Провайдер LLM: "anthropic" | "openai" | "deepseek".
+provider = "deepseek"
+
+# Модель. Пусто -> дефолт провайдера
+#   anthropic: claude-opus-5 | deepseek: deepseek-v4-flash | openai: gpt-4.1-mini
+# DeepSeek: "deepseek-v4-flash" (дёшево/быстро) или "deepseek-v4-pro" (агентные задачи).
+model = "deepseek-v4-flash"
+max_tokens = 8000
+
+# Ключ берётся из окружения по провайдеру: ANTHROPIC_API_KEY / OPENAI_API_KEY / DEEPSEEK_API_KEY.
+# Можно задать явно (не коммитьте секреты):
+# api_key = "sk-..."
+# base_url = "https://api.deepseek.com"   # переопределить endpoint
+
+# DeepSeek thinking-режим (reasoning). Для v4: thinking=true + reasoning_effort.
+thinking = false
+# reasoning_effort = "high"   # low | high | max
+
+# Рабочая директория, в которую «песочатся» встроенные файловые инструменты и bash.
+workspace = "./workspace"
+
+# Директория со скилами (каждый скил — подпапка с файлом SKILL.md).
+skills_dir = "./skills"
+
+# Системный промпт ведущего агента.
+system_prompt = """
+Ты — ведущий агент в маленьком CLI-харнесе. У тебя есть инструменты, скилы и субагенты.
+Работай пошагово. Для объёмных подзадач делегируй через инструмент task(),
+чтобы не засорять свой контекст. Скилы подгружай через load_skill() по мере необходимости.
+"""
+
+# --- Субагенты (исполнители подзадач) ---
+[[subagents]]
+name = "researcher"
+description = "Изучает тему по файлам и через MCP, возвращает сжатый конспект с фактами."
+system_prompt = "Ты исследователь. Опирайся только на найденные данные, помечай источники."
+# tools: список имён инструментов или glob-шаблонов. Пусто/нет ключа = все инструменты
+# родителя, кроме task (субагенты по умолчанию не плодят субагентов).
+tools = ["bash", "read_file", "list_dir", "fs__*"]
+
+[[subagents]]
+name = "coder"
+description = "Пишет и правит код в рабочей директории, запускает тесты."
+system_prompt = "Ты аккуратный инженер. Меняй только то, что просили. Проверяй результат запуском."
+tools = ["bash", "read_file", "write_file", "list_dir"]
+
+# --- MCP-серверы (stdio). Ключ = префикс, под которым инструменты попадут в реестр ---
+[mcp.fs]
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-filesystem", "./workspace"]
+
+# [mcp.git]
+# command = "uvx"
+# args = ["mcp-server-git", "--repository", "./workspace"]
